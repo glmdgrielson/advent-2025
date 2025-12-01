@@ -57,7 +57,7 @@ impl Puzzle for Safe {
                 0 => counter + 1,
                 _ => counter,
             };
-            
+
             (counter, dial)
         });
         Ok(result.0.to_string())
@@ -83,7 +83,7 @@ impl Puzzle for Safe {
     }
 }
 
-fn adjust_dial(dial: i16, op: i16) -> (i16, i16)  {
+fn adjust_dial(dial: i16, op: i16) -> (i16, i16) {
     let counter = (op / 100).abs();
     let op = op % 100;
     let new_dial = dial + op;
@@ -105,7 +105,10 @@ fn main() -> Result<(), AdventError> {
     let data = Safe::parse_input(&file)?;
 
     println!("The password is {0}", data.part_one().unwrap());
-    println!("The password under proper protocol is {}", data.part_two().unwrap());
+    println!(
+        "The password under proper protocol is {}",
+        data.part_two().unwrap()
+    );
 
     Ok(())
 }
