@@ -137,8 +137,8 @@ mod test {
     fn test_adjust() {
         assert_eq!(adjust_dial(50, 1000), (10, 50));
         assert_eq!(adjust_dial(50, -68), (1, 82));
-        assert_eq!(adjust_dial(52, 48), (1, 0));
-        assert_eq!(adjust_dial(0, -5), (0, 95));
+        assert_eq!(adjust_dial(52, 48), (1, 0)); // Ends at zero, ticks counter.
+        assert_eq!(adjust_dial(0, -5), (0, 95)); // Starts at zero, does NOT tick counter.
     }
 
     #[test]
