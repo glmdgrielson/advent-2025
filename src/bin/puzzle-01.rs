@@ -84,7 +84,7 @@ impl Puzzle for Safe {
 }
 
 fn adjust_dial(dial: i16, op: i16) -> (i16, i16)  {
-    let counter = op / 100;
+    let counter = (op / 100).abs();
     let op = op % 100;
     let new_dial = dial + op;
 
