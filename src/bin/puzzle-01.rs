@@ -31,7 +31,8 @@ impl Puzzle for Safe {
                     .map_err(|_| AdventError::Parse("invalid magnitude of rotation".to_string()))?;
                 // The dial only has 100 numbers, so we don't care about anything
                 // above the hundreds.
-                let magnitude = magnitude.rem_euclid(100);
+                // Edit: never mind, part 2 does actually care about that.
+                // let magnitude = magnitude.rem_euclid(100);
 
                 match dir {
                     true => Ok(magnitude as i16),
