@@ -84,11 +84,17 @@ impl Puzzle for Safe {
 }
 
 fn adjust_dial(dial: i16, op: i16) -> (i16, i16)  {
-    let dial = dial + op;
+    let counter = op / 100;
+    let op = op % 100;
+    let new_dial = dial + op;
 
     // Check the number of times the dial went past 0.
-    let counter = dial.div_euclid(100).abs();
-    let dial = dial.rem_euclid(100);
+    let counter = if dial != 0 && (new_dial > 99 || new_dial < 1) {
+        counter + 1
+    } else {
+        counter
+    };
+    let dial = new_dial.rem_euclid(100);
 
     (counter, dial)
 }
@@ -140,6 +146,7 @@ mod test {
         assert_eq!(adjust_dial(50, -68), (1, 82));
         assert_eq!(adjust_dial(52, 48), (1, 0)); // Ends at zero, ticks counter.
         assert_eq!(adjust_dial(0, -5), (0, 95)); // Starts at zero, does NOT tick counter.
+        assert_eq!(adjust_dial(55, -55), (1, 0)); // Account for hitting zero from the left.
     }
 
     #[test]
