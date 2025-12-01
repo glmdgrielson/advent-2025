@@ -7,7 +7,7 @@ use std::fs::read_to_string;
 
 use advent_2025::{AdventError, Puzzle};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Safe(Vec<i16>);
 
 impl Puzzle for Safe {
@@ -62,9 +62,34 @@ impl Puzzle for Safe {
         Ok(result.0.to_string())
     }
 
+    /// Find the password under the updated protocol.
+    ///
+    /// So now I can't actually modulo things because I
+    /// need to care about the number of times zero is passed
+    /// period. Gosh dang it...
     fn part_two(&self) -> Result<String, AdventError> {
-        todo!()
+        let result = self.0.iter().fold((0, 50), |(counter, dial), op| {
+            // let dial = dial + op;
+            let (ticks, dial) = adjust_dial(dial, *op);
+
+            // Check the number of times the dial went past 0.
+            let counter = counter + ticks;
+            // let dial = dial.rem_euclid(100);
+
+            (counter, dial)
+        });
+        Ok(result.0.to_string())
     }
+}
+
+fn adjust_dial(dial: i16, op: i16) -> (i16, i16)  {
+    let dial = dial + op;
+
+    // Check the number of times the dial went past 0.
+    let counter = dial.div_euclid(100).abs();
+    let dial = dial.rem_euclid(100);
+
+    (counter, dial)
 }
 
 fn main() -> Result<(), AdventError> {
@@ -73,6 +98,7 @@ fn main() -> Result<(), AdventError> {
     let data = Safe::parse_input(&file)?;
 
     println!("The password is {0}", data.part_one().unwrap());
+    println!("The password under proper protocol is {}", data.part_two().unwrap());
 
     Ok(())
 }
@@ -105,5 +131,21 @@ mod test {
         let answer = data.part_one().expect("Should be infalliable");
 
         assert_eq!(answer, "3".to_string());
+    }
+
+    #[test]
+    fn test_adjust() {
+        assert_eq!(adjust_dial(50, 1000), (10, 50));
+    }
+
+    #[test]
+    fn part_two() {
+        let input = &*TEST_FILE;
+
+        let data = Safe::parse_input(input).expect("Could not parse input file");
+
+        let answer = data.part_two().expect("Should be infalliable");
+
+        assert_eq!(answer, "6".to_string());
     }
 }
