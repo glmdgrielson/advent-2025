@@ -104,7 +104,7 @@ fn main() -> Result<(), AdventError> {
 
     println!("The password is {0}", data.part_one().unwrap());
     println!(
-        "The password under proper protocol is {}",
+        "The password under proper protocol is {0}",
         data.part_two().unwrap()
     );
 
