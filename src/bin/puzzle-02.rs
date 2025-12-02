@@ -77,4 +77,12 @@ mod test {
 
         assert_eq!(data.0[0], (11, 22));
     }
+
+    #[test]
+    fn part_one() {
+        let data = Ranges::parse_input(&TEST_INPUT).expect("Could not parse test input");
+
+        let answer = data.part_one().expect("failed to find answer");
+        assert_eq!(answer, "1227775554");
+    }
 }
