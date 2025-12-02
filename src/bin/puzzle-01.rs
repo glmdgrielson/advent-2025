@@ -87,7 +87,7 @@ fn adjust_dial(dial: i16, op: i16) -> (i16, i16) {
     let new_dial = dial + op;
 
     // Check to see if this actually moved us over the limit.
-    let counter = if dial != 0 && (new_dial > 99 || new_dial < 1) {
+    let counter = if dial != 0 && !(1..99).contains(&new_dial) {
         counter + 1
     } else {
         counter
