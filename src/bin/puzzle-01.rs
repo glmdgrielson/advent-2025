@@ -70,12 +70,10 @@ impl Puzzle for Safe {
     /// period. Gosh dang it...
     fn part_two(&self) -> Result<String, AdventError> {
         let result = self.0.iter().fold((0, 50), |(counter, dial), op| {
-            // let dial = dial + op;
             let (ticks, dial) = adjust_dial(dial, *op);
 
             // Check the number of times the dial went past 0.
             let counter = counter + ticks;
-            // let dial = dial.rem_euclid(100);
 
             (counter, dial)
         });
