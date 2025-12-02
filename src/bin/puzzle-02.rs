@@ -88,6 +88,11 @@ fn check_id(id: u64) -> bool {
 }
 
 /// Detect a repetitive ID.
+///
+/// A repetitive ID is anything that matches
+/// the regex `(\d+)\1+`. Careful viewers may
+/// note that the `regex` crate explicitly does not
+/// provide backreferences. AAAAAAAAAAAAAAAA.
 fn check_repeats(id: u64) -> bool {
     let id = id.to_string();
     let digits = id.chars().collect::<Vec<_>>();
