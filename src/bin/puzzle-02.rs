@@ -62,12 +62,13 @@ impl Puzzle for Ranges {
     ///
     /// Oh Eric WHY...
     fn part_two(&self) -> Result<String, AdventError> {
-        let bad_ids = self.0.iter().map(|&(one, two)| one..=two)
-            .map(|range| {
-                range.filter(|&id| check_repeats(id)).sum::<u64>()
-            })
-        .sum::<u64>();
-       Ok(bad_ids.to_string()) 
+        let bad_ids = self
+            .0
+            .iter()
+            .map(|&(one, two)| one..=two)
+            .map(|range| range.filter(|&id| check_repeats(id)).sum::<u64>())
+            .sum::<u64>();
+        Ok(bad_ids.to_string())
     }
 }
 
@@ -109,8 +110,7 @@ fn main() -> Result<(), AdventError> {
     let data = Ranges::parse_input(&file)?;
 
     println!("The sum of bad IDs is {0}", data.part_one()?);
-    println!(
-        "The sum of repetitive IDs is {0}", data.part_two()?);
+    println!("The sum of repetitive IDs is {0}", data.part_two()?);
     Ok(())
 }
 
