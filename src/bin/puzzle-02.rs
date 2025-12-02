@@ -97,7 +97,7 @@ fn check_repeats(id: u64) -> bool {
     let id = id.to_string();
     let digits = id.chars().collect::<Vec<_>>();
     let len = digits.len();
-    (1..len / 2).any(|len| {
+    (1..=len / 2).any(|len| {
         let first = &digits[..len];
         digits.chunks(len).all(|chunk| chunk == first)
     })
@@ -109,6 +109,8 @@ fn main() -> Result<(), AdventError> {
     let data = Ranges::parse_input(&file)?;
 
     println!("The sum of bad IDs is {0}", data.part_one()?);
+    println!(
+        "The sum of repetitive IDs is {0}", data.part_two()?);
     Ok(())
 }
 
