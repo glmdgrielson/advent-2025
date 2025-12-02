@@ -80,6 +80,9 @@ impl Puzzle for Ranges {
 fn check_id(id: u64) -> bool {
     let id = id.to_string();
     let len = id.len();
+    // We're looking for halves
+    // so if it doesn't divide by 2,
+    // we don't need to bother.
     if len % 2 != 0 {
         return false;
     }
@@ -98,6 +101,14 @@ fn check_repeats(id: u64) -> bool {
     let id = id.to_string();
     let digits = id.chars().collect::<Vec<_>>();
     let len = digits.len();
+    // We stop at `len / 2` because that's the
+    // longest string which has a chance of showing
+    // up multiple times in our ID. Anything longer
+    // only fits once.
+    //
+    // This is an inclusive range in case we're dealing
+    // with a two digit number where both ends of the
+    // range wind up being the exact same.
     (1..=len / 2).any(|len| {
         let first = &digits[..len];
         digits.chunks(len).all(|chunk| chunk == first)
