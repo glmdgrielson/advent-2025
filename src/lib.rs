@@ -1,6 +1,7 @@
 //! Helper systems for Advent of Code puzzles.
 
 use std::io::Error as IOError;
+use std::fs::read_to_string;
 
 use thiserror::Error;
 
@@ -25,4 +26,13 @@ pub trait Puzzle: Sized {
     fn part_two(&self) -> Result<String, AdventError> {
         todo!()
     }
+}
+
+/// Shortcut to load a data file.
+///
+/// This is really just [read_to_string][std::fs::read_to_string]
+/// mapped to return the right kind of error.
+pub fn read_file(name: &str) -> Result<String, AdventError> {
+    let data = read_to_string(name)?;
+    Ok(data)
 }
