@@ -42,7 +42,13 @@ impl Puzzle for Banks {
     }
 
     fn part_two(&self) -> Result<String, AdventError> {
-        todo!()
+        let sum = self
+            .0
+            .iter()
+            .map(|line| find_override(line))
+            .collect::<Result<Vec<_>, AdventError>>()?;
+        let sum = sum.into_iter().sum::<u64>();
+        Ok(sum.to_string())
     }
 }
 
@@ -70,22 +76,29 @@ fn find_voltage(bank: &[u64]) -> Result<u64, AdventError> {
 ///
 /// Assumes that `bank` has at least twelve elements.
 fn find_override(bank: &[u64]) -> Result<u64, AdventError> {
-    let mut line = bank.to_owned().clone();
-    for _ in 0..12 {
-        let idx = max_digit_position(&line)?;
-        line[idx] = 0;
-    }
-    let mut line = line.into_iter().enumerate().collect::<Vec<_>>();
-    line.sort_by_key(|&(_, val)| val);
-    let line = &line[..12];
-    assert!(line.iter().all(|&(_, val)| val == 0));
-    let voltage = line.iter().map(|&(idx, _)| bank[idx]).fold(0, |acc, digit| acc * 10 + digit);
-    Ok(voltage)
+    const  BATTERY_COUNT: usize = 12;
+    let iter = bank.into_iter().enumerate().collect::<Vec<_>>();
+    let fold = (1..=12).try_fold((0, 0), |(start, jolts), digit| {
+        let idx = dbg!(&iter[start..bank.len() - BATTERY_COUNT + digit])
+            .iter()
+            .max_by_key(|&(_, val)| *val);
+        let Some(idx) = idx else {
+            return Err(AdventError::Data("empty row returned".to_string()));
+        };
+        Ok((idx.0 + 1, jolts * 10 + idx.1))
+    })?;
+    Ok(fold.1)
 }
 
 fn max_digit_position(bank: &[u64]) -> Result<usize, AdventError> {
-    let max = bank.iter().max().ok_or_else(|| AdventError::Data("empty row given".to_string()))?;
-    let max_pos = bank.iter().position(|digit| digit == max).expect("Should find maximum");
+    let max = bank
+        .iter()
+        .max()
+        .ok_or_else(|| AdventError::Data("empty row given".to_string()))?;
+    let max_pos = bank
+        .iter()
+        .position(|digit| digit == max)
+        .expect("Should find maximum");
     Ok(max_pos)
 }
 
@@ -135,5 +148,15 @@ mod test {
         assert_eq!(voltage, 987654321111);
         let voltage = find_override(&[2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 7, 8]).unwrap();
         assert_eq!(voltage, 434234234278);
+        let voltage = find_override(&[8, 1, 8, 1, 8, 1, 9, 1, 1, 1, 1, 2, 1, 1, 1]).unwrap();
+        assert_eq!(voltage, 888911112111);
+    }
+
+    #[test]
+    fn part_two() {
+        let data = Banks::parse_input(&TEST_INPUT).expect("could not parse input");
+
+        let answer = data.part_two().expect("calculation should succeed");
+        assert_eq!(answer, "3121910778619");
     }
 }
