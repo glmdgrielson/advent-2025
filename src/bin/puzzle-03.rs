@@ -46,8 +46,7 @@ impl Puzzle for Banks {
             .0
             .iter()
             .map(|line| find_override(line))
-            .collect::<Result<Vec<_>, AdventError>>()?;
-        let sum = sum.into_iter().sum::<u64>();
+            .try_fold(0, |sum, volt| volt.map(|volt| sum + volt))?;
         Ok(sum.to_string())
     }
 }
