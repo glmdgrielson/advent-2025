@@ -149,7 +149,7 @@ mod test {
         let voltage = find_override(&[2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 7, 8]).unwrap();
         assert_eq!(voltage, 434234234278);
         let voltage = find_override(&[8, 1, 8, 1, 8, 1, 9, 1, 1, 1, 1, 2, 1, 1, 1]).unwrap();
-        assert_eq!(voltage, 888911112111);
+        assert_eq!(voltage, 888911112111); // Fails for some reason
     }
 
     #[test]
