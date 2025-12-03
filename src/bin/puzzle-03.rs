@@ -75,13 +75,14 @@ fn find_voltage(bank: &[u64]) -> Result<u64, AdventError> {
 ///
 /// Assumes that `bank` has at least twelve elements.
 fn find_override(bank: &[u64]) -> Result<u64, AdventError> {
-    const  BATTERY_COUNT: usize = 12;
+    const BATTERY_COUNT: usize = 12;
     let iter = bank.iter().enumerate().collect::<Vec<_>>();
     let fold = (1..=12).try_fold((0, 0), |(start, jolts), digit| {
         let idx = iter[start..bank.len() - BATTERY_COUNT + digit]
             .iter()
-            .rev() // Call to rev here so that max_by_key gives me the
-                   // element I want, which is the lowest index.
+            // Call to rev here so that max_by_key gives me the
+            // element I want, which is the lowest index.
+            .rev()
             .max_by_key(|&(_, val)| *val);
         let Some(idx) = idx else {
             return Err(AdventError::Data("empty row returned".to_string()));
