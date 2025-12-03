@@ -76,7 +76,7 @@ fn find_voltage(bank: &[u64]) -> Result<u64, AdventError> {
 /// Assumes that `bank` has at least twelve elements.
 fn find_override(bank: &[u64]) -> Result<u64, AdventError> {
     const  BATTERY_COUNT: usize = 12;
-    let iter = bank.into_iter().enumerate().collect::<Vec<_>>();
+    let iter = bank.iter().enumerate().collect::<Vec<_>>();
     let fold = (1..=12).try_fold((0, 0), |(start, jolts), digit| {
         let idx = iter[start..bank.len() - BATTERY_COUNT + digit]
             .iter()
