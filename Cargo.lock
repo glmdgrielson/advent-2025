@@ -6,6 +6,7 @@ version = 3
 name = "advent-2025"
 version = "0.1.0"
 dependencies = [
+ "simple-grid",
  "thiserror",
 ]
 
@@ -26,6 +27,12 @@ checksum = "a338cc41d27e6cc6dce6cefc13a0729dfbb81c262b1f519331575dd80ef3067f"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "simple-grid"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "724f998fa15b8418bbcaf43c1149dbf8e724336aae2c8cb92c2699515cde6f2e"
 
 [[package]]
 name = "syn"

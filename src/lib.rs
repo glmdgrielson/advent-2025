@@ -4,6 +4,7 @@ use std::io::Error as IOError;
 use std::fs::read_to_string;
 
 use thiserror::Error;
+pub use simple_grid::{Grid, GridIndex};
 
 #[derive(Error, Debug)]
 pub enum AdventError {
