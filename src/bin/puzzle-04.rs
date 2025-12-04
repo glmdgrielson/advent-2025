@@ -9,6 +9,10 @@ use advent_2025::{read_file, Puzzle, AdventError, Grid, GridIndex};
 struct Floor(Grid<bool>);
 
 impl Puzzle for Floor {
+    /// Grid consists of a floor layout consisting of cells that
+    /// may or may not have paper all over it.
+    ///
+    /// A cell has `@` if it has paper, and '.' if it does not.
     fn parse_input(file: &str) -> Result<Self, AdventError> {
         let mut grid: Grid<_> = Grid::new(0, 0, vec![]);
         for line in file.lines() {
