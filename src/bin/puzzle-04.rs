@@ -54,7 +54,8 @@ impl Puzzle for Floor {
         let mut grid = self.0.clone();
         let mut counter = 0;
         loop {
-            let pass = grid.indices()
+            let pass = grid
+                .indices()
                 .filter(|&idx| grid[idx])
                 .filter(|&idx| grid.neighbor_cells_of(idx).filter(|&cell| *cell).count() < 4)
                 .collect::<Vec<_>>();
@@ -75,7 +76,10 @@ fn main() -> Result<(), AdventError> {
     let file = read_file("src/input/puzzle04.txt")?;
     let data = Floor::parse_input(&file)?;
 
-    println!("The number of accessible paper cells is {0}", data.part_one()?);
+    println!(
+        "The number of accessible paper cells is {0}",
+        data.part_one()?
+    );
     println!("The number of clearable cells is {0}", data.part_two()?);
     Ok(())
 }
