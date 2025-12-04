@@ -10,7 +10,16 @@ struct Floor(Grid<bool>);
 
 impl Puzzle for Floor {
     fn parse_input(file: &str) -> Result<Self, AdventError> {
-        todo!()
+        let mut grid: Grid<_> = Grid::new(0, 0, vec![]);
+        for line in file.lines() {
+            let line = line.chars().map(|ch| match ch {
+                '@' => Ok(true),
+                '.' => Ok(false),
+                ch => Err(AdventError::Parse(format!("invalid floor character {0}", ch))),
+            }).collect::<Result<Vec<_>, AdventError>>()?;
+            grid.push_row(line);
+        }
+        Ok(Floor(grid))
     }
 
     fn part_one(&self) -> Result<String, AdventError> {
@@ -36,4 +45,13 @@ mod test {
         read_file("src/input/puzzle04-test.txt").expect("could not read input")
     });
 
+    #[test]
+    // Annoyingly, `simple_grid` doesn't seem to allow me to check the contents
+    // of a particular row or column in a simple way, so this is the best I'm
+    // gonna get without changing how I do grids.
+    fn parse_input() {
+        let data = Floor::parse_input(&TEST_INPUT).expect("could not parse input");
+
+        assert_eq!(data.0.dimensions(), (10, 10));
+    }
 }
