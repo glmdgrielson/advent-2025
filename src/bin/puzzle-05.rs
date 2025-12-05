@@ -1,4 +1,9 @@
 //! Puzzle 05: Cafeteria
+//! ====================
+//!
+//! Hey, can you make sure we're eating good
+//! this week? We don't have time to check
+//! everything by hand. Or by nose.
 
 use advent_2025::{read_file, AdventError, Puzzle};
 
