@@ -69,9 +69,44 @@ impl Puzzle for Database {
        Ok(sum.to_string()) 
     }
 
+    /// Find the maximum number of possible fresh ingredients.
     fn part_two(&self) -> Result<String, AdventError> {
-        todo!()
+        let mut bounds = self.ranges.clone();
+        bounds.sort_by_key(|range| range.0); // Get all of the ranges sorted.
+
+        let bounds = bounds.into_iter()
+            .fold(Vec::new(), |mut acc, range| {
+                let Some(last) = acc.last() else {
+                    acc.push(range);
+                    return acc;
+                };
+                let last = last.clone();
+
+                // If there is overlap, combine the ranges.
+                if ranges_overlap(last, range) {
+                    acc.pop();
+                    let range = (last.0.min(range.0), last.1.max(range.1));
+                    acc.push(range);
+                } else {
+                    // Otherwise we can add the new range without worry.
+                    acc.push(range);
+                }
+                acc
+            });
+
+        let sum = bounds.iter().map(|&(one, two)| one..=two).map(|range| range.count())
+            .sum::<usize>();
+        Ok(sum.to_string())
     }
+}
+
+/// Check whether two ranges overlap.
+///
+/// This checks that the second range starts
+/// after the first one ends, or that the second
+/// range ends before the first one starts.
+fn ranges_overlap(one: (u64, u64), two: (u64, u64)) -> bool {
+    !(one.1 < two.0 || two.1 < one.0)
 }
 
 fn main() -> Result<(), AdventError> {
@@ -80,6 +115,7 @@ fn main() -> Result<(), AdventError> {
     let data = Database::parse_input(&file)?;
 
     println!("The number of fresh ingredients is {0}", data.part_one()?);
+    println!("The most fresh ingredients possible is {0}", data.part_two()?);
     Ok(())
 }
 
@@ -106,5 +142,13 @@ mod test {
 
         let answer = data.part_one().expect("operation should be infalliable");
         assert_eq!(answer, "3");
+    }
+
+    #[test]
+    fn part_two() {
+        let data = Database::parse_input(&TEST_INPUT).expect("could not parse input");
+
+        let answer = data.part_two().expect("operation should be infalliable");
+        assert_eq!(answer, "14");
     }
 }
