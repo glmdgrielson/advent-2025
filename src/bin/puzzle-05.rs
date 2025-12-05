@@ -26,6 +26,7 @@ impl Puzzle for Database {
         let (ranges, ingredients) = file
             .split_once("\n\n")
             .ok_or_else(|| AdventError::Parse("could not find ingredients list".to_string()))?;
+        
         let ranges = ranges
             .lines()
             .map(|line| {
@@ -41,6 +42,7 @@ impl Puzzle for Database {
                 Ok((one, two))
             })
             .collect::<Result<Vec<_>, AdventError>>()?;
+
         let ingredients = ingredients
             .lines()
             .map(|item| {
@@ -48,10 +50,12 @@ impl Puzzle for Database {
                     .map_err(|_| AdventError::Parse(format!("invalid ingredient {0}", item)))
             })
             .collect::<Result<Vec<_>, AdventError>>()?;
+
         let database = Database {
             ranges,
             ingredients,
         };
+
         Ok(database)
     }
 
@@ -60,13 +64,16 @@ impl Puzzle for Database {
     /// An ingredient is considered fresh if it is contained
     /// inside of any of the ranges stored in the database.
     fn part_one(&self) -> Result<String, AdventError> {
-        let sum = self.ingredients
+        let sum = self
+            .ingredients
             .iter()
             .filter(|&item| {
-                self.ranges.iter().any(|&(one, two)| (one..=two).contains(item))
+                self.ranges
+                    .iter()
+                    .any(|&(one, two)| (one..=two).contains(item))
             })
             .count();
-       Ok(sum.to_string()) 
+        Ok(sum.to_string())
     }
 
     /// Find the maximum number of possible fresh ingredients.
@@ -74,27 +81,34 @@ impl Puzzle for Database {
         let mut bounds = self.ranges.clone();
         bounds.sort_by_key(|range| range.0); // Get all of the ranges sorted.
 
-        let bounds = bounds.into_iter()
-            .fold(Vec::new(), |mut acc, range| {
-                let Some(last) = acc.last() else {
-                    acc.push(range);
-                    return acc;
-                };
-                let last = last.clone();
+        // Credit to AkalUstat for this technique, by the way.
+        let bounds = bounds.into_iter().fold(Vec::new(), |mut acc, range| {
+            let Some(last) = acc.last() else {
+                // The vector is empty, so we
+                // can just push what we have
+                // and be done with it.
+                acc.push(range);
+                return acc;
+            };
+            // Copy here to avoid lifetime issues.
+            let last = *last;
 
-                // If there is overlap, combine the ranges.
-                if ranges_overlap(last, range) {
-                    acc.pop();
-                    let range = (last.0.min(range.0), last.1.max(range.1));
-                    acc.push(range);
-                } else {
-                    // Otherwise we can add the new range without worry.
-                    acc.push(range);
-                }
-                acc
-            });
+            // If there is overlap, combine the ranges.
+            if ranges_overlap(last, range) {
+                acc.pop();
+                let range = (last.0.min(range.0), last.1.max(range.1));
+                acc.push(range);
+            } else {
+                // Otherwise we can add the new range without worry.
+                acc.push(range);
+            }
+            acc
+        });
 
-        let sum = bounds.iter().map(|&(one, two)| one..=two).map(|range| range.count())
+        let sum = bounds
+            .iter()
+            .map(|&(one, two)| one..=two)
+            .map(|range| range.count())
             .sum::<usize>();
         Ok(sum.to_string())
     }
@@ -115,7 +129,10 @@ fn main() -> Result<(), AdventError> {
     let data = Database::parse_input(&file)?;
 
     println!("The number of fresh ingredients is {0}", data.part_one()?);
-    println!("The most fresh ingredients possible is {0}", data.part_two()?);
+    println!(
+        "The most fresh ingredients possible is {0}",
+        data.part_two()?
+    );
     Ok(())
 }
 
