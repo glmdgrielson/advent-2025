@@ -4,8 +4,10 @@ use advent_2025::{read_file, AdventError, Puzzle};
 
 #[derive(Clone, Debug)]
 struct Database {
-    ranges: Vec<(u32, u32)>,
-    ingredients: Vec<u32>,
+    /// A list of ranges of known good
+    /// ingredients, inclusive of both ends.
+    ranges: Vec<(u64, u64)>,
+    ingredients: Vec<u64>,
 }
 
 impl Puzzle for Database {
@@ -25,10 +27,10 @@ impl Puzzle for Database {
                 let Some((one, two)) = line.split_once('-') else {
                     return Err(AdventError::Parse(format!("invalid range {0}", line)));
                 };
-                let Ok(one) = one.parse::<u32>() else {
+                let Ok(one) = one.parse::<u64>() else {
                     return Err(AdventError::Parse(format!("invalid ingredient {0}", one)));
                 };
-                let Ok(two) = two.parse::<u32>() else {
+                let Ok(two) = two.parse::<u64>() else {
                     return Err(AdventError::Parse(format!("invalid ingredient {0}", two)));
                 };
                 Ok((one, two))
@@ -37,7 +39,7 @@ impl Puzzle for Database {
         let ingredients = ingredients
             .lines()
             .map(|item| {
-                item.parse::<u32>()
+                item.parse::<u64>()
                     .map_err(|_| AdventError::Parse(format!("invalid ingredient {0}", item)))
             })
             .collect::<Result<Vec<_>, AdventError>>()?;
@@ -48,8 +50,18 @@ impl Puzzle for Database {
         Ok(database)
     }
 
+    /// Find the sum of all of the fresh ingredients.
+    ///
+    /// An ingredient is considered fresh if it is contained
+    /// inside of any of the ranges stored in the database.
     fn part_one(&self) -> Result<String, AdventError> {
-        todo!()
+        let sum = self.ingredients
+            .iter()
+            .filter(|&item| {
+                self.ranges.iter().any(|&(one, two)| (one..=two).contains(item))
+            })
+            .count();
+       Ok(sum.to_string()) 
     }
 
     fn part_two(&self) -> Result<String, AdventError> {
@@ -60,6 +72,9 @@ impl Puzzle for Database {
 fn main() -> Result<(), AdventError> {
     let file = read_file("src/input/puzzle05.txt")?;
 
+    let data = Database::parse_input(&file)?;
+
+    println!("The number of fresh ingredients is {0}", data.part_one()?);
     Ok(())
 }
 
@@ -78,5 +93,13 @@ mod test {
 
         assert_eq!(data.ranges[0], (3, 5));
         assert_eq!(data.ingredients, vec![1, 5, 8, 11, 17, 32]);
+    }
+
+    #[test]
+    fn part_one() {
+        let data = Database::parse_input(&TEST_INPUT).expect("could not parse input");
+
+        let answer = data.part_one().expect("operation should be infalliable");
+        assert_eq!(answer, "3");
     }
 }
