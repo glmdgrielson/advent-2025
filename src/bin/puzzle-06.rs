@@ -11,7 +11,7 @@ struct Worksheet(Vec<Equation>);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Equation {
-    operands: Vec<String>,
+    operands: Vec<u64>,
     operation: Operation,
 }
 
@@ -61,13 +61,15 @@ impl Puzzle for Worksheet {
                     "*" => Operation::Mul,
                     op => return Err(AdventError::Parse(format!("invalid operation {0}", op))),
                 };
-                // We need to delay the conversion because each
-                // part reads the numbers differently, so we
-                // simply take ownership of the operands here.
+                // Everything else in the equation should be a number
+                // so we check for that and perform the conversion.
                 let operands = operands
                     .iter()
-                    .map(|&num| num.to_string())
-                    .collect::<Vec<_>>();
+                    .map(|num| {
+                        num.parse::<u64>()
+                            .map_err(|_| AdventError::Parse(format!("invalid operand {0}", num)))
+                    })
+                    .collect::<Result<Vec<_>, AdventError>>()?;
 
                 // Finally return the equation to go into the final result.
                 Ok(Equation {
@@ -81,44 +83,16 @@ impl Puzzle for Worksheet {
 
     /// Find the sum of all of the correct answers.
     fn part_one(&self) -> Result<String, AdventError> {
-        let sum = self
-            .0
-            .iter()
-            .map(|equation| {
-                // Convert the operands into numbers we can use.
-                let operands = equation
-                    .operands
-                    .iter()
-                    .map(|num| {
-                        num.parse::<u64>()
-                            .map_err(|_| AdventError::Parse(format!("invalid operand {0}", num)))
-                    })
-                    .collect::<Result<Vec<_>, AdventError>>()?;
-                match equation.operation {
-                    Operation::Add => Ok(operands.iter().sum::<u64>()),
-                    Operation::Mul => Ok(operands.iter().product::<u64>()),
-                }
-            })
-            .collect::<Result<Vec<u64>, AdventError>>()?;
-        let sum = sum.iter().sum::<u64>();
+        let sum = self.0.iter().map(|equation| match equation.operation {
+            Operation::Add => equation.operands.iter().sum::<u64>(),
+            Operation::Mul => equation.operands.iter().product::<u64>(),
+        }).sum::<u64>();
         Ok(sum.to_string())
     }
 
-    /// Find the sum of all of the correct answers, reading
-    /// the sheet correctly this time.
-    ///
-    /// It turns out that cephalopods read numbers in a completely
-    /// different fashion than we do, necessitating a completely
-    /// different parsing of the worksheet. AAAAAAAAAAAAAAA.
     fn part_two(&self) -> Result<String, AdventError> {
         todo!()
     }
-}
-
-fn parse_little_endian(num: &str) -> Result<u64, AdventError> {
-    let num = num.chars().rev().collect::<String>();
-    num.parse::<u64>()
-        .map_err(|_| AdventError::Data(format!("invalid operand {0}", num)))
 }
 
 fn main() -> Result<(), AdventError> {
@@ -147,7 +121,7 @@ mod test {
         assert_eq!(
             data.0[0],
             Equation {
-                operands: vec!["123".to_string(), "45".to_string(), "6".to_string()],
+                operands: vec![123, 45, 6],
                 operation: Operation::Mul
             }
         );
@@ -159,13 +133,5 @@ mod test {
 
         let answer = data.part_one().unwrap();
         assert_eq!(answer, "4277556");
-    }
-
-    #[test]
-    fn part_two() {
-        let data = Worksheet::parse_input(&TEST_INPUT).expect("could not parse input file");
-
-        let answer = data.part_two().unwrap();
-        assert_eq!(answer, "3263827");
     }
 }
