@@ -80,29 +80,34 @@ impl Puzzle for Worksheet {
     /// Find the sum of all of the correct answers.
     fn part_one(&self) -> Result<String, AdventError> {
         let equations = self.parse_one()?;
-        let sum = equations.iter().map(|equation| match equation.operation {
-            Operation::Add => equation.operands.iter().sum::<u64>(),
-            Operation::Mul => equation.operands.iter().product::<u64>(),
-        }).sum::<u64>();
+        let sum = equations
+            .iter()
+            .map(|equation| match equation.operation {
+                Operation::Add => equation.operands.iter().sum::<u64>(),
+                Operation::Mul => equation.operands.iter().product::<u64>(),
+            })
+            .sum::<u64>();
         Ok(sum.to_string())
     }
 
     fn part_two(&self) -> Result<String, AdventError> {
         let equations = self.parse_two()?;
-        let sum = equations.iter().map(|equation| match equation.operation {
-            Operation::Add => equation.operands.iter().sum::<u64>(),
-            Operation::Mul => equation.operands.iter().product::<u64>(),
-        }).sum::<u64>();
+        let sum = equations
+            .iter()
+            .map(|equation| match equation.operation {
+                Operation::Add => equation.operands.iter().sum::<u64>(),
+                Operation::Mul => equation.operands.iter().product::<u64>(),
+            })
+            .sum::<u64>();
         Ok(sum.to_string())
     }
 }
 
 impl Worksheet {
     fn parse_one(&self) -> Result<Vec<Equation>, AdventError> {
-        let grid = self
-            .sheet
-            .rows()
-            .try_fold(Grid::new(0, 0, vec![]), |mut grid, idx| -> Result<_, AdventError> {
+        let grid = self.sheet.rows().try_fold(
+            Grid::new(0, 0, vec![]),
+            |mut grid, idx| -> Result<_, AdventError> {
                 let line = self.sheet.row_iter(idx).collect::<String>();
                 let line = line
                     .split_ascii_whitespace()
@@ -110,17 +115,22 @@ impl Worksheet {
                     .collect::<Vec<_>>();
                 grid.push_row(line);
                 Ok(grid)
-            })?;
+            },
+        )?;
         //assert_eq!(grid.width(), self.operations.len());
         if grid.width() != self.operations.len() {
-            return Err(AdventError::Parse("improperly formed worksheet".to_string()));
+            return Err(AdventError::Parse(
+                "improperly formed worksheet".to_string(),
+            ));
         }
 
         let sheet = grid
             .columns()
             .map(|idx| {
                 // Get the column this index corresponds to.
-                let col = grid.column_iter(idx).cloned()
+                let col = grid
+                    .column_iter(idx)
+                    .cloned()
                     .map(|num| {
                         num.parse::<u64>()
                             .map_err(|_| AdventError::Data(format!("invalid operand {0}", num)))
@@ -131,20 +141,24 @@ impl Worksheet {
                     operands: col,
                     operation,
                 })
-            }).collect::<Result<Vec<_>, AdventError>>()?;
+            })
+            .collect::<Result<Vec<_>, AdventError>>()?;
         Ok(sheet)
     }
 
     fn parse_two(&self) -> Result<Vec<Equation>, AdventError> {
-        let columns = self.sheet.columns().map(|col| {
-            self.sheet.column_iter(col).collect::<String>()
-        }).map(|num| num.trim_ascii().to_owned()).collect::<Vec<_>>();
+        let columns = self
+            .sheet
+            .columns()
+            .map(|col| self.sheet.column_iter(col).collect::<String>())
+            .map(|num| num.trim_ascii().to_owned())
+            .collect::<Vec<_>>();
 
         let operands = columns.split(|col| col.is_empty()).collect::<Vec<_>>();
         // We need to make sure we have one set of operands
         // for every operation we already had.
         if operands.len() != self.operations.len() {
-            return Err(AdventError::Data("improperly formed worksheet".to_string()))
+            return Err(AdventError::Data("improperly formed worksheet".to_string()));
         };
         let sheet = operands
             .iter()
