@@ -51,7 +51,7 @@ impl Puzzle for Worksheet {
         // Before we assemble the grid, we need to make sure every line
         // has the same length, or [Grid::push_row] will panic.
         // So we find the longest line...
-        let Some(line_len) = sheet.into_iter().max_by_key(|line| line.len()) else {
+        let Some(line_len) = sheet.iter().max_by_key(|line| line.len()) else {
             return Err(AdventError::Data("file should have operands".to_string()));
         };
         // And get its length.
