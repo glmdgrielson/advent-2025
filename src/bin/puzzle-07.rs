@@ -119,7 +119,9 @@ impl Puzzle for Manifold {
                 self.0.row_iter(row).enumerate().try_for_each(|(idx, &col)| {
                     match col {
                         Cell::Empty => {
-                            next[idx] = totals[idx]; 
+                            // Completely missed that I
+                            // zeroed out the initial row, oops.
+                            next[idx] += totals[idx]; 
                         }
                         Cell::Split => {
                             next[idx] = 0;
@@ -127,8 +129,6 @@ impl Puzzle for Manifold {
                                 next[idx - 1] += totals[idx];
                             }
                             if idx != totals.len() - 1 {
-                                // This isn't getting called
-                                // and I don't know why.
                                 next[idx + 1] += totals[idx];
                             }
                         }
@@ -138,7 +138,6 @@ impl Puzzle for Manifold {
                     }
                     Ok(())
                 })?;
-                dbg!(&next);
                 Ok(next)
             });
         let sum = res?.iter().sum::<usize>();
@@ -185,6 +184,6 @@ mod test {
         let data = Manifold::parse_input(&TEST_INPUT).expect("could not parse input file");
 
         let answer = data.part_two().unwrap();
-        assert_eq!(answer, "48");
+        assert_eq!(answer, "40");
     }
 }
