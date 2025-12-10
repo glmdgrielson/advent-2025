@@ -4,11 +4,12 @@
 //! This is what happens when Mira runs the
 //! North Pole instead of Silent Hill.
 
-use std::sync::LazyLock;
+use std::{fmt::format, sync::LazyLock};
 
 use advent_2025::{read_file, Puzzle, AdventError};
 
 use regex::Regex;
+use itertools::Itertools;
 
 /// Ye olde swiss army chainsaw for matching text.
 static MACHINE_RE: LazyLock<Regex> = LazyLock::new(||
@@ -89,12 +90,43 @@ impl Puzzle for Manual {
     }
 
     fn part_one(&self) -> Result<String, AdventError> {
-        todo!()
+        let totals = self.0.iter().map(|machine| {
+            let pattern = interpret_pattern(&machine.pattern);
+            let buttons = machine.buttons.iter().map(|triggers| {
+                let flags = (0..machine.pattern.len()).map(|flag| triggers.contains(&flag))
+                    .collect::<Vec<_>>();
+                interpret_pattern(&flags)
+            }).collect::<Vec<_>>();
+            if let Some(presses) = find_press_count(&buttons, pattern) {
+                Ok(presses)
+            } else {
+                Err(AdventError::Data(format!("could not find solution: {0:?}", machine)))
+            }
+        }).collect::<Result<Vec<usize>, AdventError>>()?;
+        let sum = totals.iter().sum::<usize>();
+        Ok(sum.to_string())
     }
 
     fn part_two(&self) -> Result<String, AdventError> {
         todo!()
     }
+}
+
+fn find_press_count(buttons: &[usize], pattern: usize) -> Option<usize> {
+    (2..).find(|k| buttons.iter().combinations(*k).fold(pattern, |acc, buttons| {
+        let buttons = buttons.iter().fold(0, |a, b| a ^ **b);
+        // let reduction = buttons.iter().fold(0, |a, b| a ^ b);
+        acc ^ buttons
+    }) == 0)
+}
+
+/// Convert an array of booleans into a bitstring.
+fn interpret_pattern(pattern: &[bool]) -> usize {
+    assert!(pattern.len() <= usize::BITS as usize, "bit range exceeded");
+    pattern.iter().enumerate().fold(0, |acc, (bit, &flag)| match flag {
+        true => acc + (1 << bit),
+        false => acc,
+    })
 }
 
 fn main() -> Result<(), AdventError> {
@@ -122,5 +154,18 @@ mod test {
         assert_eq!(machine.buttons[1], vec![1, 3], "incorrect buttons");
         // Test joltages.
         assert_eq!(machine.joltages, vec![3, 5, 4, 7], "incorrect joltages");
+    }
+
+    #[test]
+    fn t_interpret_pattern() {
+        assert_eq!(interpret_pattern(&[false, true, true, false]), 0b0110);
+    }
+
+    #[test]
+    fn part_one() {
+        let data = Manual::parse_input(&TEST_INPUT).expect("could not parse input file");
+
+        let answer = data.part_one().unwrap();
+        assert_eq!(answer, "7");
     }
 }
