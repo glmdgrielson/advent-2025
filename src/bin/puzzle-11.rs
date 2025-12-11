@@ -4,10 +4,11 @@
 //! Ah, the "joys" of cable management...
 
 use advent_2025::{read_file, Puzzle, AdventError};
+use petgraph::algo::has_path_connecting;
 
 use std::collections::hash_map::RandomState;
 
-use petgraph::prelude::DiGraph;
+use petgraph::prelude::{DiGraph, NodeIndex};
 use petgraph::algo::simple_paths::all_simple_paths;
 
 #[derive(Clone, Debug)]
@@ -50,6 +51,8 @@ impl Puzzle for Rack {
         Ok(Rack(graph))
     }
 
+    /// Find every path from the nearest server `you`
+    /// to the main output `out`.
     fn part_one(&self) -> Result<String, AdventError> {
         let Some(you) = self.0.node_indices().find(|idx| self.0[*idx] == "you") else {
             return Err(AdventError::Data(format!("root node not found: {0:?}", self.0)));
@@ -58,12 +61,45 @@ impl Puzzle for Rack {
             return Err(AdventError::Data(format!("end node not found: {0:?}", self.0)));
         };
         
-        let paths = all_simple_paths::<Vec<_>, _, RandomState>(&self.0, you, out, 1, None).count();
+        let paths = self.count_paths(you, out);
         Ok(paths.to_string())
     }
 
     fn part_two(&self) -> Result<String, AdventError> {
-        todo!()
+        // Get all the special nodes identified.
+        let Some(out) = self.0.node_indices().find(|idx| self.0[*idx] == "out") else {
+            return Err(AdventError::Data(format!("end node not found: {0:?}", self.0)));
+        };
+        let Some(svr) = self.0.node_indices().find(|idx| self.0[*idx] == "svr") else {
+            return Err(AdventError::Data(format!("root node not found: {0:?}", self.0)));
+        };
+        let Some(dac) = self.0.node_indices().find(|idx| self.0[*idx] == "dac") else {
+            return Err(AdventError::Data(format!("converter not found: {0:?}", self.0)));
+        };
+        let Some(fft) = self.0.node_indices().find(|idx| self.0[*idx] == "fft") else {
+            return Err(AdventError::Data(format!("transformer node not found: {0:?}", self.0)));
+        };
+
+        let paths: usize = if has_path_connecting(&self.0, dac, fft, None) {
+            // dac -> fft
+            let to_dac = self.count_paths(svr, dac);
+            let to_fft = self.count_paths(dac, fft);
+            let to_out = self.count_paths(fft, out);
+            to_dac * to_fft * to_out
+        } else {
+            // fft -> dac
+            let to_fft = self.count_paths(svr, fft);
+            let to_dac = self.count_paths(fft, dac);
+            let to_out = self.count_paths(dac, out);
+            to_fft * to_dac * to_out
+        };
+        Ok(paths.to_string())
+    }
+}
+
+impl Rack {
+    fn count_paths(&self, a: NodeIndex<u32>, b: NodeIndex<u32>) -> usize {
+        all_simple_paths::<Vec<_>, _, RandomState>(&self.0, a, b, 1, None).count()
     }
 }
 
@@ -72,6 +108,7 @@ fn main() -> Result<(), AdventError> {
     let data = Rack::parse_input(&file)?;
 
     println!("The number of paths from 'you' to 'out' is {0}", data.part_one()?);
+    println!("The number of troublesome paths to 'out' is {0}", data.part_two()?);
     Ok(())
 }
 
