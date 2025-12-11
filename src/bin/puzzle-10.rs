@@ -4,7 +4,8 @@
 //! This is what happens when Mira runs the
 //! North Pole instead of Silent Hill.
 
-use std::{fmt::format, sync::LazyLock};
+use std::sync::LazyLock;
+use std::collections::{VecDeque, HashSet};
 
 use advent_2025::{read_file, Puzzle, AdventError};
 
@@ -22,6 +23,32 @@ struct Machine {
     pattern: Vec<bool>,
     buttons: Vec<Vec<usize>>,
     joltages: Vec<u32>,
+}
+
+impl Machine {
+    fn min_presses(&self) -> Result<usize, AdventError> {
+        let goal = interpret_pattern(&self.pattern);
+        let buttons = self.buttons
+            .iter()
+            .map(|triggers| triggers.iter().fold(0, |acc, &idx| acc | (1 << idx)))
+            .collect::<Vec<_>>();
+
+        let mut deque = VecDeque::from([(0, 0)]);
+        let mut seen = HashSet::from([0]);
+
+        while let Some((lights, presses)) = deque.pop_front() {
+            if lights == goal {
+                return Ok(presses);
+            }
+            for button in &buttons {
+                let next = lights ^ button;
+                if seen.insert(next) {
+                    deque.push_back((next, presses + 1));
+                }
+            }
+        }
+        Err(AdventError::Data(format!("could not solve machine: {0:?}", &self)))
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -90,20 +117,8 @@ impl Puzzle for Manual {
     }
 
     fn part_one(&self) -> Result<String, AdventError> {
-        let totals = self.0.iter().map(|machine| {
-            let pattern = interpret_pattern(&machine.pattern);
-            let buttons = machine.buttons.iter().map(|triggers| {
-                let flags = (0..machine.pattern.len()).map(|flag| triggers.contains(&flag))
-                    .collect::<Vec<_>>();
-                interpret_pattern(&flags)
-            }).collect::<Vec<_>>();
-            if let Some(presses) = find_press_count(&buttons, pattern) {
-                Ok(presses)
-            } else {
-                Err(AdventError::Data(format!("could not find solution: {0:?}", machine)))
-            }
-        }).collect::<Result<Vec<usize>, AdventError>>()?;
-        let sum = totals.iter().sum::<usize>();
+        let presses = self.0.iter().map(|machine| machine.min_presses()).collect::<Result<Vec<_>, AdventError>>()?;
+        let sum = presses.into_iter().sum::<usize>();
         Ok(sum.to_string())
     }
 
@@ -124,13 +139,16 @@ fn find_press_count(buttons: &[usize], pattern: usize) -> Option<usize> {
 fn interpret_pattern(pattern: &[bool]) -> usize {
     assert!(pattern.len() <= usize::BITS as usize, "bit range exceeded");
     pattern.iter().enumerate().fold(0, |acc, (bit, &flag)| match flag {
-        true => acc + (1 << bit),
+        true => acc | (1 << bit),
         false => acc,
     })
 }
 
 fn main() -> Result<(), AdventError> {
-    let file = read_file("src/input/puzzle10.md")?;
+    let file = read_file("src/input/puzzle10.txt")?;
+    let data = Manual::parse_input(&file)?;
+
+    println!("The minimum number of presses required is {0}", data.part_one()?);
     Ok(())
 }
 
