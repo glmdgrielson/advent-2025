@@ -4,18 +4,21 @@
 //! This is what happens when Mira runs the
 //! North Pole instead of Silent Hill.
 
+use std::collections::{HashSet, VecDeque};
 use std::sync::LazyLock;
-use std::collections::{VecDeque, HashSet};
 
-use advent_2025::{read_file, Puzzle, AdventError};
+use advent_2025::{read_file, AdventError, Puzzle};
 
-use regex::Regex;
 use itertools::Itertools;
+use regex::Regex;
 
 /// Ye olde swiss army chainsaw for matching text.
-static MACHINE_RE: LazyLock<Regex> = LazyLock::new(||
-    Regex::new(r"\[(?P<pattern>[.#]+)\] (?P<buttons>(\(\d+(?:,\d+)*\) )+)\{(?P<joltages>\d+(?:,\d+)*)\}")
-    .expect("regex should compile"));
+static MACHINE_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"\[(?P<pattern>[.#]+)\] (?P<buttons>(\(\d+(?:,\d+)*\) )+)\{(?P<joltages>\d+(?:,\d+)*)\}",
+    )
+    .expect("regex should compile")
+});
 
 #[derive(Clone, Debug)]
 #[allow(dead_code)] // One of the fields is unused for part one.
@@ -28,7 +31,8 @@ struct Machine {
 impl Machine {
     fn min_presses(&self) -> Result<usize, AdventError> {
         let goal = interpret_pattern(&self.pattern);
-        let buttons = self.buttons
+        let buttons = self
+            .buttons
             .iter()
             .map(|triggers| triggers.iter().fold(0, |acc, &idx| acc | (1 << idx)))
             .collect::<Vec<_>>();
@@ -47,7 +51,10 @@ impl Machine {
                 }
             }
         }
-        Err(AdventError::Data(format!("could not solve machine: {0:?}", &self)))
+        Err(AdventError::Data(format!(
+            "could not solve machine: {0:?}",
+            &self
+        )))
     }
 }
 
@@ -67,57 +74,103 @@ impl Puzzle for Manual {
     /// 3. A series of joltages, which take the form of a series of
     ///    numbers surrounded by braces (`{}`).
     fn parse_input(file: &str) -> Result<Self, AdventError> {
-        let machines = file.lines().map(|line| {
-            // Ensure that this line matches the spec of a machine.
-            let Some(machine) = &MACHINE_RE.captures(line) else {
-                return Err(AdventError::Parse(format!("invalid machine spec found: {0}", line)));
-            };
-            
-            // Convert the pattern.
-            let pattern = machine.name("pattern").expect("regex should find all subgroups").as_str();
-            let pattern = pattern.chars().map(|ch| match ch {
-                '.' => Ok(false),
-                '#' => Ok(true),
-                ch => Err(AdventError::Parse(format!("invalid indicator character {0}", ch)))
-            }).collect::<Result<Vec<_>, AdventError>>()?;
-
-            // Parse the joltages.
-            let joltages = machine.name("joltages").expect("regex should find all subgroups").as_str();
-            let joltages = joltages.split(',').map(|jolt| {
-                jolt.parse::<u32>()
-                    .map_err(|e| AdventError::Parse(format!("could not parse joltage: {0}", e)))
-            }).collect::<Result<Vec<_>, AdventError>>()?;
-
-            // Parse the buttons.
-            let buttons = machine.name("buttons").expect("regex should find all subgroups").as_str();
-            // We capture multiple buttons separated by whitespace, so we split them here.
-            let buttons = buttons.split_ascii_whitespace().map(|button| {
-                // Remove the parentheses.
-                let Some(button) = button.strip_prefix('(') else {
-                    return Err(AdventError::Parse(format!("invalid button format: {0}", button)));
-                };
-                let Some(button) = button.strip_suffix(')') else {
-                    return Err(AdventError::Parse(format!("invalid button format: {0}", button)));
+        let machines = file
+            .lines()
+            .map(|line| {
+                // Ensure that this line matches the spec of a machine.
+                let Some(machine) = &MACHINE_RE.captures(line) else {
+                    return Err(AdventError::Parse(format!(
+                        "invalid machine spec found: {0}",
+                        line
+                    )));
                 };
 
-                // Split at the commas and convert to numbers.
-                let button = button.split(',').map(|num| {
-                    // `usize` is chosen because it needs to map
-                    // to indices in the indicator pattern, and
-                    // indices are always `usize` in Rust.
-                    num.parse::<usize>()
-                        .map_err(|e| AdventError::Parse(format!("Invalid button number: {0}", e)))
-                }).collect::<Result<Vec<_>, AdventError>>()?;
-                Ok(button)
-            }).collect::<Result<Vec<_>, AdventError>>()?;
+                // Convert the pattern.
+                let pattern = machine
+                    .name("pattern")
+                    .expect("regex should find all subgroups")
+                    .as_str();
+                let pattern = pattern
+                    .chars()
+                    .map(|ch| match ch {
+                        '.' => Ok(false),
+                        '#' => Ok(true),
+                        ch => Err(AdventError::Parse(format!(
+                            "invalid indicator character {0}",
+                            ch
+                        ))),
+                    })
+                    .collect::<Result<Vec<_>, AdventError>>()?;
 
-            Ok(Machine { pattern, buttons, joltages })
-        }).collect::<Result<Vec<_>, AdventError>>()?;
+                // Parse the joltages.
+                let joltages = machine
+                    .name("joltages")
+                    .expect("regex should find all subgroups")
+                    .as_str();
+                let joltages = joltages
+                    .split(',')
+                    .map(|jolt| {
+                        jolt.parse::<u32>().map_err(|e| {
+                            AdventError::Parse(format!("could not parse joltage: {0}", e))
+                        })
+                    })
+                    .collect::<Result<Vec<_>, AdventError>>()?;
+
+                // Parse the buttons.
+                let buttons = machine
+                    .name("buttons")
+                    .expect("regex should find all subgroups")
+                    .as_str();
+                // We capture multiple buttons separated by whitespace, so we split them here.
+                let buttons = buttons
+                    .split_ascii_whitespace()
+                    .map(|button| {
+                        // Remove the parentheses.
+                        let Some(button) = button.strip_prefix('(') else {
+                            return Err(AdventError::Parse(format!(
+                                "invalid button format: {0}",
+                                button
+                            )));
+                        };
+                        let Some(button) = button.strip_suffix(')') else {
+                            return Err(AdventError::Parse(format!(
+                                "invalid button format: {0}",
+                                button
+                            )));
+                        };
+
+                        // Split at the commas and convert to numbers.
+                        let button = button
+                            .split(',')
+                            .map(|num| {
+                                // `usize` is chosen because it needs to map
+                                // to indices in the indicator pattern, and
+                                // indices are always `usize` in Rust.
+                                num.parse::<usize>().map_err(|e| {
+                                    AdventError::Parse(format!("Invalid button number: {0}", e))
+                                })
+                            })
+                            .collect::<Result<Vec<_>, AdventError>>()?;
+                        Ok(button)
+                    })
+                    .collect::<Result<Vec<_>, AdventError>>()?;
+
+                Ok(Machine {
+                    pattern,
+                    buttons,
+                    joltages,
+                })
+            })
+            .collect::<Result<Vec<_>, AdventError>>()?;
         Ok(Manual(machines))
     }
 
     fn part_one(&self) -> Result<String, AdventError> {
-        let presses = self.0.iter().map(|machine| machine.min_presses()).collect::<Result<Vec<_>, AdventError>>()?;
+        let presses = self
+            .0
+            .iter()
+            .map(|machine| machine.min_presses())
+            .collect::<Result<Vec<_>, AdventError>>()?;
         let sum = presses.into_iter().sum::<usize>();
         Ok(sum.to_string())
     }
@@ -128,27 +181,39 @@ impl Puzzle for Manual {
 }
 
 fn find_press_count(buttons: &[usize], pattern: usize) -> Option<usize> {
-    (2..).find(|k| buttons.iter().combinations(*k).fold(pattern, |acc, buttons| {
-        let buttons = buttons.iter().fold(0, |a, b| a ^ **b);
-        // let reduction = buttons.iter().fold(0, |a, b| a ^ b);
-        acc ^ buttons
-    }) == 0)
+    (2..).find(|k| {
+        buttons
+            .iter()
+            .combinations(*k)
+            .fold(pattern, |acc, buttons| {
+                let buttons = buttons.iter().fold(0, |a, b| a ^ **b);
+                // let reduction = buttons.iter().fold(0, |a, b| a ^ b);
+                acc ^ buttons
+            })
+            == 0
+    })
 }
 
 /// Convert an array of booleans into a bitstring.
 fn interpret_pattern(pattern: &[bool]) -> usize {
     assert!(pattern.len() <= usize::BITS as usize, "bit range exceeded");
-    pattern.iter().enumerate().fold(0, |acc, (bit, &flag)| match flag {
-        true => acc | (1 << bit),
-        false => acc,
-    })
+    pattern
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (bit, &flag)| match flag {
+            true => acc | (1 << bit),
+            false => acc,
+        })
 }
 
 fn main() -> Result<(), AdventError> {
     let file = read_file("src/input/puzzle10.txt")?;
     let data = Manual::parse_input(&file)?;
 
-    println!("The minimum number of presses required is {0}", data.part_one()?);
+    println!(
+        "The minimum number of presses required is {0}",
+        data.part_one()?
+    );
     Ok(())
 }
 
@@ -158,8 +223,9 @@ mod test {
 
     use std::sync::LazyLock;
 
-    static TEST_INPUT: LazyLock<String> = LazyLock::new(
-        || read_file("src/input/puzzle10-test.txt").expect("could not read input file"));
+    static TEST_INPUT: LazyLock<String> = LazyLock::new(|| {
+        read_file("src/input/puzzle10-test.txt").expect("could not read input file")
+    });
 
     #[test]
     fn parse_input() {
@@ -167,7 +233,11 @@ mod test {
 
         let machine = data.0[0].clone();
         // Test indicator pattern.
-        assert_eq!(machine.pattern, vec![false, true, true, false], "incorrect indicator pattern");
+        assert_eq!(
+            machine.pattern,
+            vec![false, true, true, false],
+            "incorrect indicator pattern"
+        );
         // Test buttons.
         assert_eq!(machine.buttons[1], vec![1, 3], "incorrect buttons");
         // Test joltages.
